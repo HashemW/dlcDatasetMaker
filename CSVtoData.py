@@ -22,7 +22,7 @@ HORSE_KEYPOINT_ORDER = [
 
 # Human: Standard 17 COCO keypoints
 HUMAN_KEYPOINT_ORDER = [
-    'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
+    'nose', 'left_ear', 'right_ear',
     'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
     'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
     'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
@@ -199,7 +199,7 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
         frame_base_name = f"{curr_frame_idx:06d}"
         
         # Determine output paths
-        is_validation_frame = (curr_frame_idx % 9 == 0) or (curr_frame_idx % 8 == 0) # Simplified logic
+        is_validation_frame = (curr_frame_idx %120 == 0) or (curr_frame_idx % 135 == 0) # Simplified logic
         image_out_dir = validimages_dir_name if is_validation_frame else trainimages_dir_name
         label_out_dir = validlabels_dir_name if is_validation_frame else trainlabels_dir_name
         image_out_path = os.path.join(image_out_dir, f"{frame_base_name}.jpg")
@@ -255,21 +255,19 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
         if horse_scorer_name and horse_individual_name_to_use: # Only if horse CSV was processed successfully
             horse_records_for_frame = horse_poses_by_frame.get(frame_id_lookup)
             horse_frame_data_dict = horse_records_for_frame[0] if horse_records_for_frame else None # Get the single row/dict for this frame
-            print(horse_frame_data_dict)
             for kpt_name in HORSE_KEYPOINT_ORDER: # kpt_name is bodypart from HORSE_KEYPOINT_ORDER
                 kpt_x_abs, kpt_y_abs, kpt_score = 0.0, 0.0, 0.0
                 visibility_flag = VISIBILITY_NOT_LABELED
 
                 if horse_frame_data_dict:
                     # Construct tuple keys for accessing DLC data
-                    x_col_tuple = (horse_scorer_name, horse_individual_name_to_use, kpt_name, 'x')
-                    y_col_tuple = (horse_scorer_name, horse_individual_name_to_use, kpt_name, 'y')
-                    score_col_tuple = (horse_scorer_name, horse_individual_name_to_use, kpt_name, 'likelihood')
-
-                    raw_x = horse_frame_data_dict.get(x_col_tuple)
-                    raw_y = horse_frame_data_dict.get(y_col_tuple)
-                    raw_score = horse_frame_data_dict.get(score_col_tuple)
-
+                    x_col_str = str((horse_scorer_name, horse_individual_name_to_use, kpt_name, 'x'))
+                    y_col_str = str((horse_scorer_name, horse_individual_name_to_use, kpt_name, 'y'))
+                    score_col_str = str((horse_scorer_name, horse_individual_name_to_use, kpt_name, 'likelihood'))
+                    raw_x = horse_frame_data_dict.get(x_col_str)
+                    raw_y = horse_frame_data_dict.get(y_col_str)
+                    raw_score = horse_frame_data_dict.get(score_col_str)
+                    print(f"Processing horse keypoint '{kpt_name}' for frame {frame_id_lookup}: x={raw_x}, y={raw_y}, score={raw_score}")
                     if pd.notna(raw_x) and pd.notna(raw_y) and pd.notna(raw_score):
                         try:
                             kpt_x_abs, kpt_y_abs, kpt_score = float(raw_x), float(raw_y), float(raw_score)
@@ -292,7 +290,9 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
                     f"{0.0:.{decimal_places}f}", f"{0.0:.{decimal_places}f}",
                     f"{VISIBILITY_NOT_LABELED:.1f}"
                 ])
-
+        
+        # Write the label file with class ID, bounding box, and keypoints
+        # Format: class_id xc yc w h keypoint1_x keypoint1_y keypoint1_visibility ...
 
         with open(label_out_path, 'w') as f:
             f.write(" ".join(label_parts) + " " + " ".join(all_keypoints_str_parts))
