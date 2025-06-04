@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import os
-
+import sys
 # --- Configuration ---
 HORSE_POSE_FILE = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs/horseVid/horse_pose_predictions.csv'
 HUMAN_POSE_FILE = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs/horseVid/human_pose_predictions.csv'
@@ -383,5 +383,53 @@ def main():
     if SAVE_INDIVIDUAL_FRAMES:
         print(f"Individual frames saved in '{OUTPUT_DIR_FRAMES}'.")
 
+if len(sys.argv) > 1:
+        VIDEO_PATH = sys.argv[1]
+        file_name_no_ext = os.path.splitext(os.path.basename(VIDEO_PATH))[0]
+        file_name = os.path.basename(VIDEO_PATH)
+        file_name = os.path.splitext(file_name)[0]
+        # HORSE_POSE_FILE = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs/horseVid/horse_pose_predictions.csv'
+        # HUMAN_POSE_FILE = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs/horseVid/human_pose_predictions.csv'
+        # BOUNDING_BOX_FILE = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs/horseVid/bounding_pose_predictions.csv'
+        # # --- Output Configuration ---
+        # INPUT_VIDEO_PATH = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/testVideo/horseVid.mp4'
+        # OUTPUT_VIDEO_BLACK_CANVAS_PATH = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/testVideo/output_video_black_canvas.mp4'
+        # OUTPUT_VIDEO_OVERLAY_PATH = '/fs/nexus-scratch/hwahed/dlcDatasetMaker/testVideo/output_video_overlay.mp4'
+        # --- Define Paths ---
+        # It's good practice to make these easily configurable if needed
+        # Ensure these base paths are correct for your system
+        INPUT_VIDEO_PATH = VIDEO_PATH
+        video_dir = os.path.dirname(VIDEO_PATH)
+        OUTPUT_VIDEO_BLACK_CANVAS_PATH = os.path.join(video_dir, "black_canvas.mp4")
+        OUTPUT_VIDEO_OVERLAY_PATH = os.path.join(video_dir, "overlay.mp4")
+        CSV_BASE_DIR = "/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs"
+        DATASET_BASE_DIR = "/fs/nexus-scratch/hwahed/dlcDatasetMaker/dataset"
+        TRAIN_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "train/images")
+        TRAIN_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "train/labels")
+        VALID_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "valid/images")
+        VALID_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "valid/labels")
+        
+        for dir_path in [TRAIN_DIR_IMAGES, TRAIN_DIR_LABELS, VALID_DIR_IMAGES, VALID_DIR_LABELS]:
+            os.makedirs(dir_path, exist_ok=True) # Create dirs if they don't exist
+       
+        
+        # Construct full CSV paths
+        HUMAN_POSE_FILE = os.path.join(CSV_BASE_DIR, file_name_no_ext, "human_pose_predictions.csv")
+        HORSE_POSE_FILE = os.path.join(CSV_BASE_DIR, file_name_no_ext, "horse_pose_predictions.csv") # Path to the DLC-formatted horse CSV
+        BOUNDING_BOX_FILE = os.path.join(CSV_BASE_DIR, file_name_no_ext, "bounding_pose_predictions.csv")
+        
+        for csv_path in [HORSE_POSE_FILE, HUMAN_POSE_FILE, BOUNDING_BOX_FILE]:
+            csv_dir = os.path.dirname(csv_path)
+            if not os.path.exists(csv_dir):
+                os.makedirs(csv_dir, exist_ok=True)
+            if not os.path.exists(csv_path):
+                with open(csv_path, "w") as f:
+                    f.write("")  # create empty file
+
+else:
+    print("Usage: python CSVtoData.py <input_video_path>")
+    sys.exit(1)
+        
 if __name__ == '__main__':
     main()
+    

@@ -3,6 +3,11 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+import glob
+import random
+
+VALIDATION_RATIO = 0.1
+
 
 # --- Configuration Constants ---
 # Define the order of horse keypoints.
@@ -184,36 +189,48 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
         # Continue or return
 
 
-    # --- Main Processing Loop ---
-    curr_frame_idx = 0
+    num_train_imgs = len(glob.glob(os.path.join(trainimages_dir_name, "*.jpg")))
+    num_valid_imgs = len(glob.glob(os.path.join(validimages_dir_name, "*.jpg")))
+    total_existing_imgs = num_train_imgs + num_valid_imgs
+
+    # Start at the next frame index
+    curr_frame_idx = 0  # This is the frame number in the video
+    output_frame_idx = total_existing_imgs  # This is the sequential output index (1, 2, 3, ...)
+
     processed_frames_count = 0
     while cap.isOpened():
         ret, frame_image = cap.read()
-        if not ret: break
+        if not ret:
+            break
 
         if frame_skip_rate > 1 and curr_frame_idx % frame_skip_rate != 0:
             curr_frame_idx += 1
             continue
 
         frame_id_lookup = curr_frame_idx
-        frame_base_name = f"{curr_frame_idx:06d}"
-        
+
+        # Only increment output_frame_idx when we actually process a frame
+        frame_base_name = f"{output_frame_idx + 1:06d}"  # Start from 1, zero-padded
+
         # Determine output paths
-        is_validation_frame = (curr_frame_idx %120 == 0) or (curr_frame_idx % 135 == 0) # Simplified logic
+        # ... inside your processing loop ...
+        rand_val = random.random()
+        is_validation_frame = rand_val < VALIDATION_RATIO
         image_out_dir = validimages_dir_name if is_validation_frame else trainimages_dir_name
         label_out_dir = validlabels_dir_name if is_validation_frame else trainlabels_dir_name
         image_out_path = os.path.join(image_out_dir, f"{frame_base_name}.jpg")
         label_out_path = os.path.join(label_out_dir, f"{frame_base_name}.txt")
 
-        cv2.imwrite(image_out_path, frame_image)
         bbox_data = combined_bboxes_by_frame.get(frame_id_lookup)
-
         if not bbox_data:
-            print(f"Warning: No combined bounding box data for frame_id {frame_id_lookup}. Skipping label file.")
+            print(f"Warning: No combined bounding box data for frame_id {frame_id_lookup}. Skipping frame.")
             curr_frame_idx += 1
             continue
 
-        label_parts = ["0"] # Class ID
+        # --- Only now, after all checks, save the image ---
+        cv2.imwrite(image_out_path, frame_image)
+
+        label_parts = ["0"]  # Class ID
         norm_xc = bbox_data['combined_xc'] / img_width
         norm_yc = bbox_data['combined_yc'] / img_height
         norm_w = bbox_data['combined_w'] / img_width
@@ -224,7 +241,6 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
         ])
 
         all_keypoints_str_parts = []
-
         # --- Process Human Keypoints ---
         human_records_for_frame = human_poses_by_frame.get(frame_id_lookup)
         human_record = human_records_for_frame[0] if human_records_for_frame else None
@@ -296,9 +312,10 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
 
         with open(label_out_path, 'w') as f:
             f.write(" ".join(label_parts) + " " + " ".join(all_keypoints_str_parts))
-        
-        processed_frames_count +=1
+
+        processed_frames_count += 1
         curr_frame_idx += 1
+        output_frame_idx += 1
 
     cap.release()
     cv2.destroyAllWindows()

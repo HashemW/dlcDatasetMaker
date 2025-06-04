@@ -20,7 +20,9 @@ def get_human_pose(model_path, video_path, csv_output_path, target_class_name,
         print(f"Error loading model: {e}")
         print("Please ensure the model path is correct and the model is a valid Ultralytics pose model.")
         exit()
-
+    output_dir = os.path.dirname(csv_output_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
     # Get class names from the model
     model_class_names = model.names
     try:
@@ -45,7 +47,7 @@ def get_human_pose(model_path, video_path, csv_output_path, target_class_name,
         file_name = os.path.splitext(file_name)[0]
         output_project_directory = dir_name
         output_run_name = "horseVid_pose_predictions_named_csv"
-
+        
         results = model(
             video_path,
             stream=True,
@@ -189,7 +191,8 @@ def get_horse_pose(output_file, video_path):
                                             superanimal_name,
                                             model_name="resnet_50",
                                             detector_name="fasterrcnn_mobilenet_v3_large_fpn",
-                                            video_adapt = False)
+                                            video_adapt = False,
+                                            batch_size=8)
     dir_name = os.path.dirname(video_path)
     file_name = os.path.basename(VIDEO_PATH)
     file_name = os.path.splitext(file_name)[0]
@@ -298,7 +301,7 @@ if len(sys.argv) > 1:
     for i, arg in enumerate(sys.argv):
         if i == 1:
             print(f"Argument {i}: {arg}")
-            MODEL_PATH = "yolo11n-pose.pt" # Example for a standard COCO-trained model
+            MODEL_PATH = "yolo11x-pose.pt" # Example for a standard COCO-trained model
                                     # Replace with your "yolo11n-pose.pt" if it is a valid model path.
                                     # Ensure it's compatible with COCO keypoints if using the names below.
 
