@@ -130,6 +130,12 @@ def createIMGsAndTxt(video_path, human_pose_csv, horse_pose_csv_path, # Renamed 
     try:
         human_pose_df = pd.read_csv(human_pose_csv)
         bounding_box_df = pd.read_csv(bounding_box_csv)
+
+        # --- FIX: Normalize frame numbers to be 0-indexed ---
+        if 'frame_number' in human_pose_df.columns:
+            human_pose_df['frame_number'] -= 1
+        if 'frame_number' in bounding_box_df.columns:
+            bounding_box_df['frame_number'] -= 1
     except FileNotFoundError as e:
         print(f"Error loading Human Pose or Bounding Box CSV: {e}")
         cap.release()
@@ -333,10 +339,10 @@ if __name__ == "__main__":
         CSV_BASE_DIR = "/fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVOutputs"
         DATASET_BASE_DIR = "/fs/nexus-scratch/hwahed/dlcDatasetMaker/dataset"
 
-        TRAIN_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "train/images")
-        TRAIN_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "train/labels")
-        VALID_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "valid/images")
-        VALID_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "valid/labels")
+        TRAIN_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "train/images/", file_name_no_ext)
+        TRAIN_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "train/labels/", file_name_no_ext)
+        VALID_DIR_IMAGES = os.path.join(DATASET_BASE_DIR, "valid/images/", file_name_no_ext)
+        VALID_DIR_LABELS = os.path.join(DATASET_BASE_DIR, "valid/labels/", file_name_no_ext)
 
         for dir_path in [TRAIN_DIR_IMAGES, TRAIN_DIR_LABELS, VALID_DIR_IMAGES, VALID_DIR_LABELS]:
             os.makedirs(dir_path, exist_ok=True) # Create dirs if they don't exist

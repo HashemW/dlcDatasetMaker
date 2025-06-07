@@ -17,4 +17,4 @@ VIDEO_PATH="$1"
 # Run the training script
 python3 /fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVProducer.py "$VIDEO_PATH"
 python3 /fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVtoVidTest.py "$VIDEO_PATH"
-python3 /fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVtoData.py "$VIDEO_PATH"
+python3 /fs/nexus-scratch/hwahed/dlcDatasetMaker/CSVtoData2.py "$VIDEO_PATH"
